@@ -1,2 +1,2 @@
 # Seaford
-Personal seafodian App
+Personal seafordian App
