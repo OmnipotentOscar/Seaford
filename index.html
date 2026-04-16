@@ -100,6 +100,11 @@ align-items: center; justify-content: center; transition: transform 0.5s; }
 /* Barometer chart */
 .baro-chart { width: 100%; height: 48px; }
 
+/* Stargazing */
+.stars-row { display: flex; align-items: center; gap: 16px; }
+.moon-viz { flex: 0 0 auto; }
+.stars-meta { font-size: 11px; color: var(–muted); margin-top: 2px; }
+
 /* Pollen */
 .pollen-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .pollen { background: rgba(2,6,23,0.6); border: 1px solid var(–border); border-radius: 12px; padding: 10px; }
@@ -138,6 +143,8 @@ const ICONS = {
   sunIcon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
   anchor: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg>`,
   gauge: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>`,
+  star: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  moon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
   droplet: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
   thermometer: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`,
   wavesSm: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>`,
@@ -257,13 +264,74 @@ function pressureTrend(history) {
   return { label: "Steady", color: "var(--dim)", symbol: "→" };
 }
 
+// Moon phase: 0 = new, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter
+function moonPhase(date) {
+  // Reference new moon: 2000-01-06 18:14 UTC
+  const synodic = 29.530588853;
+  const ref = Date.UTC(2000, 0, 6, 18, 14) / 1000;
+  const now = date.getTime() / 1000;
+  const daysSince = (now - ref) / 86400;
+  let phase = (daysSince / synodic) % 1;
+  if (phase < 0) phase += 1;
+  return phase;
+}
+
+function moonPhaseName(p) {
+  if (p < 0.03 || p > 0.97) return "New moon";
+  if (p < 0.22) return "Waxing crescent";
+  if (p < 0.28) return "First quarter";
+  if (p < 0.47) return "Waxing gibbous";
+  if (p < 0.53) return "Full moon";
+  if (p < 0.72) return "Waning gibbous";
+  if (p < 0.78) return "Last quarter";
+  return "Waning crescent";
+}
+
+function moonIllumination(p) {
+  // Fraction lit (0..1), peaks at 1 during full moon
+  return (1 - Math.cos(2 * Math.PI * p)) / 2;
+}
+
+// Is it currently "night" (sun well below horizon)
+function isNight(now, sunrise, sunset) {
+  // Astronomical night starts ~30 min after sunset, ends ~30 min before sunrise
+  const buf = 30 * 60 * 1000;
+  if (now >= new Date(sunset.getTime() + buf)) return true;
+  if (now <= new Date(sunrise.getTime() - buf)) return true;
+  return false;
+}
+
+function starScore({ cloudCover, moonIllum, precip }) {
+  // 10 = clear skies, new moon, dry; 1 = overcast, full moon, wet
+  // Cloud is the biggest factor by far
+  const cloudPts = 6 * (1 - cloudCover / 100); // 0..6
+  const moonPts = 3 * (1 - moonIllum); // 0..3 (darker moon = better)
+  const precipPts = precip <= 0 ? 1 : 0; // 0..1
+  return Math.max(1, Math.min(10, Math.round(cloudPts + moonPts + precipPts)));
+}
+
 // --- Data fetching --------------------------------------------------------
 async function loadAll() {
   const [weather, marine, air] = await Promise.all([
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,cloud_cover,pressure_msl,relative_humidity_2m&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,sunrise,sunset,wind_speed_10m_max&timezone=Europe/London&forecast_days=1&past_hours=6`).then(r => r.json()),
     fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&current=wave_height,sea_surface_temperature&hourly=sea_level_height_msl&timezone=Europe/London&forecast_days=3`).then(r => r.json()),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&current=grass_pollen,tree_pollen,weed_pollen&timezone=Europe/London`).then(r => r.json())
+    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=grass_pollen,tree_pollen,weed_pollen&domains=cams_europe&timezone=Europe/London&forecast_days=1`).then(r => r.json())
   ]);
+
+  // Pick current hour's pollen values from hourly series
+  let pollen = { grass_pollen: null, tree_pollen: null, weed_pollen: null };
+  if (air.hourly?.time) {
+    const nowHour = new Date();
+    nowHour.setMinutes(0, 0, 0);
+    const nowISO = nowHour.toISOString().slice(0, 13); // "YYYY-MM-DDTHH"
+    let idx = air.hourly.time.findIndex(t => t.startsWith(nowISO));
+    if (idx === -1) idx = 0; // fallback to first available
+    pollen = {
+      grass_pollen: air.hourly.grass_pollen?.[idx],
+      tree_pollen: air.hourly.tree_pollen?.[idx],
+      weed_pollen: air.hourly.weed_pollen?.[idx]
+    };
+  }
   const tideSeries = (marine.hourly?.time || []).map((t, i) => ({
     t: new Date(t), h: marine.hourly.sea_level_height_msl[i]
   }));
@@ -286,7 +354,7 @@ async function loadAll() {
     daily: weather.daily,
     marine: marine.current,
     tideSeries,
-    pollen: air.current,
+    pollen,
     pressureHistory
   };
 }
@@ -373,7 +441,57 @@ function renderSunBar(sunrise, sunset, now) {
 </div>`;
 }
 
-// --- Render ---------------------------------------------------------------
+// --- Moon phase SVG ------------------------------------------------------
+function renderMoon(phase, size = 64) {
+  // phase: 0..1 (0 new, 0.5 full)
+  // Use two ellipses to form the lit crescent/gibbous
+  const r = size / 2 - 2;
+  const cx = size / 2, cy = size / 2;
+
+  // How wide the terminator ellipse is, and which side is lit
+  // At phase 0: fully dark. Phase 0.25: right half lit. Phase 0.5: full.
+  // Phase 0.75: left half lit. Phase 1: dark again.
+  const p = phase;
+  // Parameter that goes -1 (new) .. 0 (quarter) .. +1 (full) .. 0 .. -1
+  const waxing = p < 0.5;
+  const frac = waxing ? p * 2 : (1 - p) * 2; // 0..1 across the half
+  // terminator ellipse x-radius (negative = dark on right side)
+  const tRx = r * Math.cos(Math.PI * frac);
+
+  // Build with a clipping path so we show only the illuminated region.
+  // The moon is a circle. The illuminated area is:
+  //   waxing: right of terminator
+  //   waning: left of terminator
+  // We'll render the dark moon, then draw the lit portion on top.
+
+  // Use a single SVG path for the crescent/gibbous using two arcs
+  // Start at top of moon, arc down the right edge, then arc back via terminator
+  const top = `${cx},${cy - r}`;
+  const bot = `${cx},${cy + r}`;
+
+  // Outer arc direction (right side): sweep=1 (clockwise) for waxing
+  // Terminator ellipse: rx = |tRx|, ry = r
+  // If tRx >= 0 (more than half lit): inner ellipse curves same direction as outer
+  // If tRx < 0 (less than half lit): terminator curves the other way
+  const outerSweep = waxing ? 1 : 0;
+  // For terminator:
+  //   fraction >= 0.5 (gibbous): tRx >= 0, ellipse goes "outward" — sweep opposite to outer
+  //   fraction < 0.5 (crescent): tRx < 0, ellipse goes "inward" — sweep same as outer
+  // Simpler: always use large-arc=0, compute sweep
+  const innerSweep = frac >= 0.5
+    ? (waxing ? 0 : 1)
+    : (waxing ? 1 : 0);
+
+  const litPath = `M ${top} A ${r} ${r} 0 0 ${outerSweep} ${bot} A ${Math.abs(tRx)} ${r} 0 0 ${innerSweep} ${top} Z`;
+
+  return `
+<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <path d="${litPath}" fill="#f1f5f9"/>
+</svg>`;
+}
+
+
 let state = { loading: true, error: null, data: null, now: new Date(), refreshing: false };
 
 function render() {
@@ -448,6 +566,18 @@ function render() {
   const grass = pollenLevel(pollen?.grass_pollen);
   const tree = pollenLevel(pollen?.tree_pollen);
   const weed = pollenLevel(pollen?.weed_pollen);
+
+  // Astronomy
+  const phase = moonPhase(now);
+  const phaseName = moonPhaseName(phase);
+  const illum = moonIllumination(phase);
+  const nightTime = isNight(now, sunrise, sunset);
+  const stars = starScore({
+    cloudCover: current.cloud_cover,
+    moonIllum: illum,
+    precip: current.precipitation
+  });
+  const starsCol = scoreColor(stars);
 
   app.innerHTML = `
 <header>
@@ -561,6 +691,24 @@ function render() {
     </div>
   </div>
   ${renderBaroChart(pressureHistory)}
+</div>
+
+<!-- Stargazing -->
+<div class="card">
+  <div class="label">${ICONS.star}<span>Stargazing</span><span class="right">${nightTime ? "Dark now" : "Daytime"}</span></div>
+  <div class="stars-row">
+    <div class="moon-viz">${renderMoon(phase, 64)}</div>
+    <div class="score-wrap">
+      <div>
+        <span class="score" style="color:${starsCol}">${stars}</span>
+        <span class="score-slash">/ 10</span>
+      </div>
+      <div class="score-sub">${phaseName} · ${Math.round(illum * 100)}% lit</div>
+    </div>
+  </div>
+  <div class="score-bar"><div style="width:${stars * 10}%; background:${starsCol}"></div></div>
+  <div class="score-legend"><span>Can't see a thing</span><span>Milky Way</span></div>
+  <div class="stars-meta" style="margin-top:10px">${Math.round(current.cloud_cover)}% cloud cover${!nightTime ? " · too light to see stars now" : ""}</div>
 </div>
 
 <!-- Pollen -->
