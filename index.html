@@ -315,22 +315,23 @@ async function loadAll() {
   const [weather, marine, air] = await Promise.all([
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,cloud_cover,pressure_msl,relative_humidity_2m&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,sunrise,sunset,wind_speed_10m_max&timezone=Europe/London&forecast_days=1&past_hours=6`).then(r => r.json()),
     fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&current=wave_height,sea_surface_temperature&hourly=sea_level_height_msl&timezone=Europe/London&forecast_days=3`).then(r => r.json()),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=grass_pollen,tree_pollen,weed_pollen&domains=cams_europe&timezone=Europe/London&forecast_days=1`).then(r => r.json())
+    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&domains=cams_europe&timezone=Europe/London&forecast_days=1`).then(r => r.json())
   ]);
 
   // Pick current hour's pollen values from hourly series
-  let pollen = { grass_pollen: null, tree_pollen: null, weed_pollen: null };
+  const POLLEN_TYPES = ["alder_pollen","birch_pollen","grass_pollen","mugwort_pollen","olive_pollen","ragweed_pollen"];
+  let pollen = {};
+  POLLEN_TYPES.forEach(k => pollen[k] = null);
   if (air.hourly?.time) {
     const nowHour = new Date();
     nowHour.setMinutes(0, 0, 0);
-    const nowISO = nowHour.toISOString().slice(0, 13); // "YYYY-MM-DDTHH"
+    const nowISO = nowHour.toISOString().slice(0, 13);
     let idx = air.hourly.time.findIndex(t => t.startsWith(nowISO));
-    if (idx === -1) idx = 0; // fallback to first available
-    pollen = {
-      grass_pollen: air.hourly.grass_pollen?.[idx],
-      tree_pollen: air.hourly.tree_pollen?.[idx],
-      weed_pollen: air.hourly.weed_pollen?.[idx]
-    };
+    if (idx === -1) idx = 0;
+    POLLEN_TYPES.forEach(k => {
+      const arr = air.hourly[k];
+      pollen[k] = arr ? arr[idx] : null;
+    });
   }
   const tideSeries = (marine.hourly?.time || []).map((t, i) => ({
     t: new Date(t), h: marine.hourly.sea_level_height_msl[i]
@@ -442,47 +443,58 @@ function renderSunBar(sunrise, sunset, now) {
 }
 
 // --- Moon phase SVG ------------------------------------------------------
+// phase: 0 = new moon, 0.25 = first quarter (right half lit, waxing),
+//        0.5 = full, 0.75 = last quarter (left half lit, waning), 1 = new.
 function renderMoon(phase, size = 64) {
-  // phase: 0..1 (0 new, 0.5 full)
-  // Use two ellipses to form the lit crescent/gibbous
   const r = size / 2 - 2;
   const cx = size / 2, cy = size / 2;
 
-  // How wide the terminator ellipse is, and which side is lit
-  // At phase 0: fully dark. Phase 0.25: right half lit. Phase 0.5: full.
-  // Phase 0.75: left half lit. Phase 1: dark again.
-  const p = phase;
-  // Parameter that goes -1 (new) .. 0 (quarter) .. +1 (full) .. 0 .. -1
-  const waxing = p < 0.5;
-  const frac = waxing ? p * 2 : (1 - p) * 2; // 0..1 across the half
-  // terminator ellipse x-radius (negative = dark on right side)
-  const tRx = r * Math.cos(Math.PI * frac);
+  // Illumination fraction (0..1) — 0 at new, 1 at full
+  const illum = (1 - Math.cos(2 * Math.PI * phase)) / 2;
 
-  // Build with a clipping path so we show only the illuminated region.
-  // The moon is a circle. The illuminated area is:
-  //   waxing: right of terminator
-  //   waning: left of terminator
-  // We'll render the dark moon, then draw the lit portion on top.
+  // New moon: show dark disk
+  if (illum < 0.02) {
+    return `
+<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+</svg>`;
+  }
+  // Full moon: show lit disk
+  if (illum > 0.98) {
+    return `
+<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="#f1f5f9" stroke="#334155" stroke-width="1"/>
+</svg>`;
+  }
 
-  // Use a single SVG path for the crescent/gibbous using two arcs
-  // Start at top of moon, arc down the right edge, then arc back via terminator
-  const top = `${cx},${cy - r}`;
-  const bot = `${cx},${cy + r}`;
+  const waxing = phase < 0.5;
+  // Terminator ellipse x-radius:
+  //   crescent (illum < 0.5): tRx > 0, ellipse curves INWARD from the limb
+  //   gibbous  (illum > 0.5): tRx > 0, ellipse curves OUTWARD
+  // We use the same value for radius; it's the sweep direction that flips.
+  const tRx = r * Math.abs(Math.cos(Math.PI * illum));
 
-  // Outer arc direction (right side): sweep=1 (clockwise) for waxing
-  // Terminator ellipse: rx = |tRx|, ry = r
-  // If tRx >= 0 (more than half lit): inner ellipse curves same direction as outer
-  // If tRx < 0 (less than half lit): terminator curves the other way
+  // Build the illuminated-region path.
+  // Start at top of circle, arc down outer limb, then arc back across terminator.
+  //
+  // WAXING (lit on right): outer arc goes right-side (sweep=1).
+  // WANING (lit on left):  outer arc goes left-side (sweep=0).
+  //
+  // For the terminator half-ellipse:
+  //   crescent: terminator bulges AWAY from lit side → sweep = opposite of outer
+  //   gibbous:  terminator bulges TOWARD lit side → sweep = same as outer
   const outerSweep = waxing ? 1 : 0;
-  // For terminator:
-  //   fraction >= 0.5 (gibbous): tRx >= 0, ellipse goes "outward" — sweep opposite to outer
-  //   fraction < 0.5 (crescent): tRx < 0, ellipse goes "inward" — sweep same as outer
-  // Simpler: always use large-arc=0, compute sweep
-  const innerSweep = frac >= 0.5
-    ? (waxing ? 0 : 1)
-    : (waxing ? 1 : 0);
+  const crescent = illum < 0.5;
+  const innerSweep = crescent
+    ? (waxing ? 0 : 1)   // opposite of outer
+    : (waxing ? 1 : 0);  // same as outer
 
-  const litPath = `M ${top} A ${r} ${r} 0 0 ${outerSweep} ${bot} A ${Math.abs(tRx)} ${r} 0 0 ${innerSweep} ${top} Z`;
+  const topX = cx, topY = cy - r;
+  const botX = cx, botY = cy + r;
+
+  const litPath = `M ${topX} ${topY}
+    A ${r} ${r} 0 0 ${outerSweep} ${botX} ${botY}
+    A ${tRx} ${r} 0 0 ${innerSweep} ${topX} ${topY} Z`;
 
   return `
 <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
@@ -563,9 +575,13 @@ function render() {
   const pressure = current.pressure_msl;
   const trend = pressureTrend(pressureHistory.map(h => h.p));
 
-  const grass = pollenLevel(pollen?.grass_pollen);
-  const tree = pollenLevel(pollen?.tree_pollen);
-  const weed = pollenLevel(pollen?.weed_pollen);
+  // Pollen - group tree species and pick the most relevant reading
+  const treeSum = (pollen.alder_pollen || 0) + (pollen.birch_pollen || 0) + (pollen.olive_pollen || 0);
+  const weedSum = (pollen.mugwort_pollen || 0) + (pollen.ragweed_pollen || 0);
+  const allPollenNull = POLLEN_TYPES.every(k => pollen[k] == null);
+  const grass = pollenLevel(pollen.grass_pollen);
+  const tree = pollenLevel(allPollenNull ? null : treeSum);
+  const weed = pollenLevel(allPollenNull ? null : weedSum);
 
   // Astronomy
   const phase = moonPhase(now);
@@ -713,15 +729,19 @@ function render() {
 
 <!-- Pollen -->
 <div class="card">
-  <div class="label">${ICONS.flower}<span>Pollen</span></div>
-  <div class="pollen-grid">
-    ${[["Grass", grass], ["Tree", tree], ["Weed", weed]].map(([name, lvl]) => `
-      <div class="pollen">
-        <div class="p-label">${name}</div>
-        <div class="p-val" style="color:${lvl.color}">${lvl.label}</div>
-        <div class="bars">${[1,2,3,4].map(i => `<span style="background:${i <= lvl.score ? lvl.color : 'var(--border)'}"></span>`).join("")}</div>
-      </div>`).join("")}
-  </div>
+  <div class="label">${ICONS.flower}<span>Pollen</span>${allPollenNull ? '<span class="right">No data for this location</span>' : ''}</div>
+  ${allPollenNull ? `
+    <div class="stars-meta" style="margin-top:0">Pollen forecasts from CAMS don't always cover UK coastal points. Check the Met Office forecast instead.</div>
+  ` : `
+    <div class="pollen-grid">
+      ${[["Grass", grass], ["Tree", tree], ["Weed", weed]].map(([name, lvl]) => `
+        <div class="pollen">
+          <div class="p-label">${name}</div>
+          <div class="p-val" style="color:${lvl.color}">${lvl.label}</div>
+          <div class="bars">${[1,2,3,4].map(i => `<span style="background:${i <= lvl.score ? lvl.color : 'var(--border)'}"></span>`).join("")}</div>
+        </div>`).join("")}
+    </div>
+  `}
 </div>
 
 <p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.</p>`;
