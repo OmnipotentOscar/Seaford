@@ -87,6 +87,8 @@ margin-top: 12px; padding-top: 12px; border-top: 1px solid var(–border); }
 .score { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1; }
 .score-sub { font-size: 13px; color: var(–muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .score-slash { font-size: 14px; color: var(–muted); }
+.glory { display: inline-block; margin-left: 10px; font-size: 18px;
+font-weight: 500; letter-spacing: -0.01em; vertical-align: 8px; }
 .score-bar { height: 6px; background: var(–border); border-radius: 3px; overflow: hidden; margin-top: 16px; }
 .score-bar > div { height: 100%; border-radius: 3px; transition: width 0.5s, background 0.5s; }
 .score-legend { display: flex; justify-content: space-between; font-size: 10px; color: var(–muted); margin-top: 4px; }
@@ -142,6 +144,21 @@ align-items: center; justify-content: center; transition: transform 0.5s; }
 .pollen .bars { display: flex; gap: 2px; margin-top: 8px; }
 .pollen .bars span { flex: 1; height: 4px; border-radius: 2px; background: var(–border); }
 
+/* Taxis */
+.taxi-list { display: flex; flex-direction: column; gap: 8px; }
+.taxi-item { display: flex; align-items: center; gap: 12px;
+padding: 10px 12px; background: rgba(2,6,23,0.6);
+border: 1px solid var(–border); border-radius: 12px;
+text-decoration: none; color: var(–text); }
+.taxi-item:active { background: rgba(56,189,248,0.1); }
+.taxi-icon { width: 34px; height: 34px; border-radius: 50%;
+background: rgba(56,189,248,0.15); color: var(–accent);
+display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.taxi-info { flex: 1; min-width: 0; }
+.taxi-name { font-size: 14px; font-weight: 500; }
+.taxi-num { font-size: 12px; color: var(–muted);
+font-variant-numeric: tabular-nums; margin-top: 1px; }
+
 .footnote { font-size: 10px; color: var(–muted); text-align: center;
 margin-top: 14px; line-height: 1.5; }
 .error { padding: 24px; text-align: center; color: #fca5a5; }
@@ -166,7 +183,12 @@ const LOCATIONS = [
     lon: 0.10,
     activity: "boat",
     icon: "beach",
-    hasMarine: true
+    hasMarine: true,
+    taxis: [
+      { name: "Seahaven Cabs", phone: "01323 892223" },
+      { name: "Beacon Taxis", phone: "01323 898888" },
+      { name: "Cuckmere Travel", phone: "01323 470710" }
+    ]
   },
   {
     id: "alfriston",
@@ -176,7 +198,12 @@ const LOCATIONS = [
     lon: 0.16,
     activity: "horse",
     icon: "church",
-    hasMarine: false
+    hasMarine: false,
+    taxis: [
+      { name: "Cuckmere Travel", phone: "01323 470710" },
+      { name: "Lewes Yellow Taxis", phone: "01273 803233" },
+      { name: "Seahaven Cabs", phone: "01323 892223" }
+    ]
   },
   {
     id: "eastbourne",
@@ -186,7 +213,12 @@ const LOCATIONS = [
     lon: 0.28,
     activity: "boat",
     icon: "town",
-    hasMarine: true
+    hasMarine: true,
+    taxis: [
+      { name: "720 Taxis", phone: "01323 720720" },
+      { name: "Sussex Cars", phone: "01323 726726" },
+      { name: "Cuckmere Travel", phone: "01323 470710" }
+    ]
   }
 ];
 const DEFAULT_LOC_ID = "seaford";
@@ -207,6 +239,8 @@ const ICONS = {
   town: size => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l5-4v18"/><path d="M19 21V11l-9-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>`,
   chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
   horse: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3l-1 2-3-1-2 2 1 2-2 1-2-2H6a4 4 0 0 0-4 4v3l3-1 1 3-2 2v3h4v-3l2-2h4l2 3h4v-3l-2-2 1-5 3-1V3z"/></svg>`,
+  phone: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  phoneCircle: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
   star: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   moon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
   droplet: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
@@ -263,6 +297,20 @@ function weatherScore({ cloudCover, precip, windKmh }) {
 function scoreColor(s) {
   const colors = ["#ef4444","#f97316","#f97316","#f59e0b","#eab308","#84cc16","#65a30d","#22c55e","#16a34a","#10b981"];
   return colors[Math.max(0, Math.min(9, s - 1))];
+}
+
+function gloryWord(tempC) {
+  if (tempC == null) return "—";
+  if (tempC < 0) return "Absolute shite";
+  if (tempC < 5) return "Grim";
+  if (tempC < 9) return "Bleak";
+  if (tempC < 13) return "Bearable";
+  if (tempC < 17) return "Not bad";
+  if (tempC < 20) return "Tidy";
+  if (tempC < 23) return "Lovely";
+  if (tempC < 26) return "Glory be";
+  if (tempC < 29) return "Whopping";
+  return "Full banana";
 }
 
 function findExtremes(series) {
@@ -800,12 +848,13 @@ ${loc.hasMarine ? `
       <div>
         <span class="score" style="color:${sColor}">${score}</span>
         <span class="score-slash">/ 10</span>
+        <span class="glory" style="color:${sColor}">${gloryWord(current.temperature_2m)}</span>
       </div>
       <div class="score-sub">${Math.round(current.temperature_2m)}°C now · H ${hi}° L ${lo}°</div>
     </div>
   </div>
   <div class="score-bar"><div style="width:${score * 10}%; background:${sColor}"></div></div>
-  <div class="score-legend"><span>Grim</span><span>Glorious</span></div>
+  <div class="score-legend"><span>Grim</span><span>Glory be</span></div>
 
   <div class="meta-grid">
     <div class="meta">
@@ -923,7 +972,23 @@ ${loc.activity === "horse" ? `
   `}
 </div>
 
-<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.0 · ${new Date().toLocaleDateString("en-GB")}</p>`;
+<!-- Taxis -->
+<div class="card">
+  <div class="label">${ICONS.phone}<span>Local taxis</span></div>
+  <div class="taxi-list">
+    ${loc.taxis.map(t => `
+      <a class="taxi-item" href="tel:${t.phone.replace(/\s+/g, '')}">
+        <div class="taxi-icon">${ICONS.phoneCircle}</div>
+        <div class="taxi-info">
+          <div class="taxi-name">${t.name}</div>
+          <div class="taxi-num">${t.phone}</div>
+        </div>
+      </a>
+    `).join('')}
+  </div>
+</div>
+
+<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.2 · ${new Date().toLocaleDateString("en-GB")}</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
