@@ -287,10 +287,11 @@ function weatherDescription(code) {
   return map[code] || "Mixed";
 }
 
-function weatherScore({ cloudCover, precip, windKmh }) {
+function weatherScore({ cloudCover, precip, windMph }) {
   const cloudPts = 4 * (1 - cloudCover / 100);
   const precipPts = precip <= 0 ? 3 : precip < 0.2 ? 2 : precip < 1 ? 1 : 0;
-  const windPts = windKmh < 10 ? 3 : windKmh < 20 ? 2 : windKmh < 30 ? 1 : 0;
+  // Wind: <6mph calm, <12 light, <19 fresh, 19+ blowy
+  const windPts = windMph < 6 ? 3 : windMph < 12 ? 2 : windMph < 19 ? 1 : 0;
   return Math.max(1, Math.min(10, Math.round(cloudPts + precipPts + windPts)));
 }
 
@@ -301,16 +302,20 @@ function scoreColor(s) {
 
 function gloryWord(tempC) {
   if (tempC == null) return "—";
-  if (tempC < 0) return "Absolute shite";
-  if (tempC < 5) return "Grim";
-  if (tempC < 9) return "Bleak";
-  if (tempC < 13) return "Bearable";
-  if (tempC < 17) return "Not bad";
-  if (tempC < 20) return "Tidy";
-  if (tempC < 23) return "Lovely";
-  if (tempC < 26) return "Glory be";
-  if (tempC < 29) return "Whopping";
-  return "Full banana";
+  const t = Math.round(tempC);
+  let word;
+  if (tempC < 0) word = "Absolute shite";
+  else if (tempC < 5) word = "Grim";
+  else if (tempC < 9) word = "Bleak";
+  else if (tempC < 13) word = "Bearable";
+  else if (tempC < 17) word = "Not bad";
+  else if (tempC < 20) word = "Tidy";
+  else if (tempC < 23) word = "Lovely";
+  else if (tempC < 26) word = "Glory be";
+  else if (tempC < 29) word = "Whopping";
+  else if (tempC < 35) word = "Full banana";
+  else word = "Wayyy too Ot";
+  return `${t}° ${word}`;
 }
 
 function findExtremes(series) {
@@ -348,11 +353,20 @@ function compassDir(deg) {
   return dirs[Math.round(((deg % 360) / 22.5)) % 16];
 }
 
-function boatDayVerdict({ waveHeight, windKmh, gustKmh, precip }) {
+function boatDayVerdict({ waveHeight, windMph, gustMph, precip }) {
+  // "'Avin a bubble" — proper big seas, waves ~1m+
+  if (waveHeight != null && waveHeight >= 0.9) {
+    return {
+      verdict: "'Avin a bubble",
+      sub: `Waves ${waveHeight.toFixed(2)}m · too lumpy`,
+      color: "#ef4444", icon: "x"
+    };
+  }
+
   const reasons = [];
   if (waveHeight != null && waveHeight > FLAT_SEA_M) reasons.push(`waves ${waveHeight.toFixed(2)}m`);
-  if (windKmh > 25) reasons.push(`wind ${Math.round(windKmh)} km/h`);
-  if (gustKmh != null && gustKmh > 40) reasons.push(`gusts ${Math.round(gustKmh)} km/h`);
+  if (windMph > 16) reasons.push(`wind ${Math.round(windMph)} mph`);
+  if (gustMph != null && gustMph > 25) reasons.push(`gusts ${Math.round(gustMph)} mph`);
   if (precip > 1) reasons.push("rain");
 
   if (reasons.length === 0) {
@@ -362,16 +376,16 @@ function boatDayVerdict({ waveHeight, windKmh, gustKmh, precip }) {
       color: "#10b981", icon: "check"
     };
   }
-  if (reasons.length === 1 && waveHeight != null && waveHeight < 1 && windKmh < 30) {
+  if (reasons.length === 1 && windMph < 19) {
     return { verdict: "Borderline", sub: "Manageable: " + reasons.join(", "), color: "#eab308", icon: "warn" };
   }
   return { verdict: "Not today", sub: reasons.join(" · "), color: "#ef4444", icon: "x" };
 }
 
-function horseDayVerdict({ windKmh, gustKmh, precip, tempC }) {
+function horseDayVerdict({ windMph, gustMph, precip, tempC }) {
   const reasons = [];
-  if (windKmh > 30) reasons.push(`wind ${Math.round(windKmh)} km/h`);
-  if (gustKmh != null && gustKmh > 45) reasons.push(`gusts ${Math.round(gustKmh)} km/h`);
+  if (windMph > 19) reasons.push(`wind ${Math.round(windMph)} mph`);
+  if (gustMph != null && gustMph > 28) reasons.push(`gusts ${Math.round(gustMph)} mph`);
   if (precip > 2) reasons.push("heavy rain");
   else if (precip > 0.5) reasons.push("rain");
   if (tempC != null && tempC < 0) reasons.push("freezing");
@@ -384,7 +398,7 @@ function horseDayVerdict({ windKmh, gustKmh, precip, tempC }) {
       color: "#10b981", icon: "check"
     };
   }
-  if (reasons.length === 1 && windKmh < 40 && precip < 2) {
+  if (reasons.length === 1 && windMph < 25 && precip < 2) {
     return { verdict: "Borderline", sub: "Manageable: " + reasons.join(", "), color: "#eab308", icon: "warn" };
   }
   return { verdict: "Not today", sub: reasons.join(" · "), color: "#ef4444", icon: "x" };
@@ -454,7 +468,7 @@ function fetchJSON(url, timeoutMs = 10000) {
 
 async function loadAll(loc) {
   // Fetch each source independently. If pollen fails, weather still loads.
-  const weatherP = fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,cloud_cover,pressure_msl,relative_humidity_2m&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,sunrise,sunset,wind_speed_10m_max&timezone=Europe/London&forecast_days=1&past_hours=6`);
+  const weatherP = fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,cloud_cover,pressure_msl,relative_humidity_2m&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,sunrise,sunset,wind_speed_10m_max&timezone=Europe/London&forecast_days=1&past_hours=6&wind_speed_unit=mph`);
   const marineP = loc.hasMarine
     ? fetchJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}&current=wave_height,sea_surface_temperature&hourly=sea_level_height_msl&timezone=Europe/London&forecast_days=3`)
     : Promise.resolve(null);
@@ -727,11 +741,11 @@ function render() {
   const windowMs = 12 * 60 * 60 * 1000;
   const chartData = tideSeries.filter(p => Math.abs(p.t - now) < windowMs);
 
-  // Weather
+  // Weather (wind in mph since we requested wind_speed_unit=mph)
   const score = weatherScore({
     cloudCover: current.cloud_cover,
     precip: current.precipitation,
-    windKmh: current.wind_speed_10m
+    windMph: current.wind_speed_10m
   });
   const sColor = scoreColor(score);
   const iconName = weatherIconName(current.weather_code);
@@ -754,13 +768,13 @@ function render() {
   const seaTemp = marine?.sea_surface_temperature;
   const boat = boatDayVerdict({
     waveHeight,
-    windKmh: current.wind_speed_10m,
-    gustKmh: current.wind_gusts_10m,
+    windMph: current.wind_speed_10m,
+    gustMph: current.wind_gusts_10m,
     precip: current.precipitation
   });
   const horse = horseDayVerdict({
-    windKmh: current.wind_speed_10m,
-    gustKmh: current.wind_gusts_10m,
+    windMph: current.wind_speed_10m,
+    gustMph: current.wind_gusts_10m,
     precip: current.precipitation,
     tempC: current.temperature_2m
   });
@@ -850,7 +864,7 @@ ${loc.hasMarine ? `
         <span class="score-slash">/ 10</span>
         <span class="glory" style="color:${sColor}">${gloryWord(current.temperature_2m)}</span>
       </div>
-      <div class="score-sub">${Math.round(current.temperature_2m)}°C now · H ${hi}° L ${lo}°</div>
+      <div class="score-sub">H ${hi}° · L ${lo}°</div>
     </div>
   </div>
   <div class="score-bar"><div style="width:${score * 10}%; background:${sColor}"></div></div>
@@ -865,7 +879,7 @@ ${loc.hasMarine ? `
       </div>
       <div>
         <div class="meta-title">Wind</div>
-        <div class="val">${Math.round(current.wind_speed_10m)} km/h <span style="color:var(--muted)">${windDirLabel}</span></div>
+        <div class="val">${Math.round(current.wind_speed_10m)} mph <span style="color:var(--muted)">${windDirLabel}</span></div>
       </div>
     </div>
     <div class="meta">
@@ -988,7 +1002,7 @@ ${loc.activity === "horse" ? `
   </div>
 </div>
 
-<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.2 · ${new Date().toLocaleDateString("en-GB")}</p>`;
+<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.3 · ${new Date().toLocaleDateString("en-GB")}</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
