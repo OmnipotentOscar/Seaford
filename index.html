@@ -197,6 +197,7 @@ const LOCATIONS = [
     lat: 50.81,
     lon: 0.16,
     activity: "horse",
+    rcGlider: true,
     icon: "church",
     hasMarine: false,
     taxis: [
@@ -239,6 +240,7 @@ const ICONS = {
   town: size => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l5-4v18"/><path d="M19 21V11l-9-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>`,
   chevron: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
   horse: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3l-1 2-3-1-2 2 1 2-2 1-2-2H6a4 4 0 0 0-4 4v3l3-1 1 3-2 2v3h4v-3l2-2h4l2 3h4v-3l-2-2 1-5 3-1V3z"/></svg>`,
+  plane: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`,
   phone: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
   phoneCircle: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
   star: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
@@ -292,7 +294,17 @@ function weatherScore({ cloudCover, precip, windMph }) {
   const precipPts = precip <= 0 ? 3 : precip < 0.2 ? 2 : precip < 1 ? 1 : 0;
   // Wind: <6mph calm, <12 light, <19 fresh, 19+ blowy
   const windPts = windMph < 6 ? 3 : windMph < 12 ? 2 : windMph < 19 ? 1 : 0;
-  return Math.max(1, Math.min(10, Math.round(cloudPts + precipPts + windPts)));
+  let score = Math.round(cloudPts + precipPts + windPts);
+
+  // Wind cap: only proper calm days can score above 6.
+  // <10 mph: no cap. 10-15 mph: cap at 6. 15-20: cap at 5. 20+: cap at 4.
+  let cap = 10;
+  if (windMph >= 20) cap = 4;
+  else if (windMph >= 15) cap = 5;
+  else if (windMph >= 10) cap = 6;
+  score = Math.min(score, cap);
+
+  return Math.max(1, Math.min(10, score));
 }
 
 function scoreColor(s) {
@@ -380,6 +392,24 @@ function boatDayVerdict({ waveHeight, windMph, gustMph, precip }) {
     return { verdict: "Borderline", sub: "Manageable: " + reasons.join(", "), color: "#eab308", icon: "warn" };
   }
   return { verdict: "Not today", sub: reasons.join(" · "), color: "#ef4444", icon: "x" };
+}
+
+function rcGliderVerdict({ windMph, windDir, precip }) {
+  // Ridge lift on South Downs (ridge runs roughly E-W) needs wind from N side.
+  // W (270°) through NW to N (360°/0°)
+  if (precip > 0.5) return null;
+  if (windMph < 10 || windMph > 25) return null;
+  if (windDir == null) return null;
+  const inRange = windDir >= 270 || windDir === 0;
+  if (!inRange) return null;
+
+  const compass = compassDir(windDir);
+  return {
+    verdict: "Good RC gliding day",
+    sub: `${Math.round(windMph)} mph from ${compass} · ridge lift on`,
+    color: "#10b981",
+    icon: "check"
+  };
 }
 
 function horseDayVerdict({ windMph, gustMph, precip, tempC }) {
@@ -778,6 +808,11 @@ function render() {
     precip: current.precipitation,
     tempC: current.temperature_2m
   });
+  const rc = loc.rcGlider ? rcGliderVerdict({
+    windMph: current.wind_speed_10m,
+    windDir: current.wind_direction_10m,
+    precip: current.precipitation
+  }) : null;
 
   const pressure = current.pressure_msl;
   const trend = pressureTrend(pressureHistory.map(h => h.p));
@@ -939,6 +974,20 @@ ${loc.activity === "horse" ? `
 </div>
 `}
 
+${rc ? `
+<!-- RC Gliding -->
+<div class="card">
+  <div class="label">${ICONS.plane}<span>RC gliding</span></div>
+  <div class="verdict-row">
+    <div class="verdict-icon" style="background:${rc.color}22; color:${rc.color}">${ICONS[rc.icon]}</div>
+    <div class="verdict-text">
+      <div class="verdict-main" style="color:${rc.color}">${rc.verdict}</div>
+      <div class="verdict-sub">${rc.sub}</div>
+    </div>
+  </div>
+</div>
+` : ''}
+
 <!-- Barometer -->
 <div class="card">
   <div class="label">${ICONS.gauge}<span>Barometer</span><span class="right" style="color:${trend.color}">${trend.symbol} ${trend.label}</span></div>
@@ -1002,7 +1051,7 @@ ${loc.activity === "horse" ? `
   </div>
 </div>
 
-<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.3 · ${new Date().toLocaleDateString("en-GB")}</p>`;
+<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.5 · ${new Date().toLocaleDateString("en-GB")}</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
