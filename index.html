@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -37,142 +36,163 @@
   .refresh.spinning svg { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Location picker */
-.loc-picker { position: relative; flex: 1; }
-.loc-btn { display: flex; align-items: center; gap: 10px; background: none;
-border: none; padding: 0; cursor: pointer; color: var(–text); text-align: left; }
-.loc-btn:active { opacity: 0.7; }
-.loc-icon { width: 36px; height: 36px; border-radius: 50%;
-background: rgba(15,23,42,0.8); border: 1px solid var(–border);
-display: flex; align-items: center; justify-content: center;
-color: var(–accent); flex: 0 0 auto; }
-.loc-info { flex: 1; min-width: 0; }
-.loc-info h1 { display: flex; align-items: center; gap: 6px; }
-.loc-info h1 .chev { color: var(–dim); display: inline-flex; transition: transform 0.2s; }
-.loc-picker.open .chev { transform: rotate(180deg); }
-.loc-menu { position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-background: #1e293b; border: 1px solid #334155; border-radius: 14px;
-padding: 6px; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-opacity: 0; pointer-events: none; transform: translateY(-6px); transition: all 0.15s; }
-.loc-picker.open .loc-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.loc-item { display: flex; align-items: center; gap: 12px; padding: 10px;
-border-radius: 10px; cursor: pointer; color: var(–text); }
-.loc-item:active { background: rgba(56,189,248,0.15); }
-.loc-item.active { background: rgba(56,189,248,0.1); }
-.loc-item .loc-icon { background: rgba(2,6,23,0.5); }
-.loc-item .name { font-weight: 500; }
-.loc-item .reg { font-size: 11px; color: var(–muted); margin-top: 2px; }
-.card { background: rgba(15,23,42,0.8); border: 1px solid var(–border);
-border-radius: 18px; padding: 18px; margin-bottom: 14px; }
-.label { display: flex; align-items: center; gap: 8px; font-size: 11px;
-text-transform: uppercase; letter-spacing: 0.08em; color: var(–dim); margin-bottom: 12px; }
-.label .right { margin-left: auto; text-transform: none; letter-spacing: normal; color: var(–muted); }
-.row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
-.big { font-size: 40px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1; }
-.big .unit { font-size: 16px; color: var(–muted); margin-left: 4px; }
-.caption { font-size: 11px; color: var(–muted); margin-top: 4px; }
-.right-block { text-align: right; }
-.right-block .title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(–dim); }
-.right-block .val { font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.right-block .time { font-size: 11px; color: var(–dim); font-variant-numeric: tabular-nums; }
-.tide-chart { width: 100%; height: 140px; margin-top: 4px; }
-.extremes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-margin-top: 12px; padding-top: 12px; border-top: 1px solid var(–border); }
-.extremes .block .title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(–dim); }
-.extremes .block .val { font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.extremes .block.right { text-align: right; }
-.weather-row { display: flex; align-items: center; gap: 16px; }
-.icon-big { flex: 0 0 auto; }
-.score-wrap { flex: 1; }
-.score { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1; }
-.score-sub { font-size: 13px; color: var(–muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
-.score-slash { font-size: 14px; color: var(–muted); }
-.glory { display: inline-block; margin-left: 10px; font-size: 18px;
-font-weight: 500; letter-spacing: -0.01em; vertical-align: 8px; }
-.score-bar { height: 6px; background: var(–border); border-radius: 3px; overflow: hidden; margin-top: 16px; }
-.score-bar > div { height: 100%; border-radius: 3px; transition: width 0.5s, background 0.5s; }
-.score-legend { display: flex; justify-content: space-between; font-size: 10px; color: var(–muted); margin-top: 4px; }
-.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-margin-top: 14px; padding-top: 14px; border-top: 1px solid var(–border); }
-.meta { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(–dim); }
-.meta .val { color: var(–text); font-variant-numeric: tabular-nums; }
-.meta svg { flex: 0 0 auto; }
-.meta-title { font-size: 10px; color: var(–muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  /* Location picker */
+  .loc-picker { position: relative; flex: 1; }
+  .loc-btn { display: flex; align-items: center; gap: 10px; background: none;
+    border: none; padding: 0; cursor: pointer; color: var(--text); text-align: left; }
+  .loc-btn:active { opacity: 0.7; }
+  .loc-icon { width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(15,23,42,0.8); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); flex: 0 0 auto; }
+  .loc-info { flex: 1; min-width: 0; }
+  .loc-info h1 { display: flex; align-items: center; gap: 6px; }
+  .loc-info h1 .chev { color: var(--dim); display: inline-flex; transition: transform 0.2s; }
+  .loc-picker.open .chev { transform: rotate(180deg); }
+  .loc-menu { position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+    padding: 6px; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    opacity: 0; pointer-events: none; transform: translateY(-6px); transition: all 0.15s; }
+  .loc-picker.open .loc-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .loc-item { display: flex; align-items: center; gap: 12px; padding: 10px;
+    border-radius: 10px; cursor: pointer; color: var(--text); }
+  .loc-item:active { background: rgba(56,189,248,0.15); }
+  .loc-item.active { background: rgba(56,189,248,0.1); }
+  .loc-item .loc-icon { background: rgba(2,6,23,0.5); }
+  .loc-item .name { font-weight: 500; }
+  .loc-item .reg { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .card { background: rgba(15,23,42,0.8); border: 1px solid var(--border);
+    border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+  .label { display: flex; align-items: center; gap: 8px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 12px; }
+  .label .right { margin-left: auto; text-transform: none; letter-spacing: normal; color: var(--muted); }
+  .row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+  .big { font-size: 40px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1; }
+  .big .unit { font-size: 16px; color: var(--muted); margin-left: 4px; }
+  .caption { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .right-block { text-align: right; }
+  .right-block .title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); }
+  .right-block .val { font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .right-block .time { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .tide-chart { width: 100%; height: 140px; margin-top: 4px; }
+  .extremes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .extremes .block .title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); }
+  .extremes .block .val { font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .extremes .block.right { text-align: right; }
+  .weather-row { display: flex; align-items: center; gap: 16px; }
+  .icon-big { flex: 0 0 auto; }
+  .score-wrap { flex: 1; }
+  .score { font-size: 52px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1; }
+  .score-sub { font-size: 13px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .score-slash { font-size: 14px; color: var(--muted); }
+  .glory { display: inline-block; margin-left: 10px; font-size: 18px;
+    font-weight: 500; letter-spacing: -0.01em; vertical-align: 8px; }
+  .score-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 16px; }
+  .score-bar > div { height: 100%; border-radius: 3px; transition: width 0.5s, background 0.5s; }
+  .score-legend { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .meta { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--dim); }
+  .meta .val { color: var(--text); font-variant-numeric: tabular-nums; }
+  .meta svg { flex: 0 0 auto; }
+  .meta-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
-/* Sun bar */
-.sun-bar { position: relative; height: 24px; margin-top: 4px; }
-.sun-track { position: absolute; left: 0; right: 0; top: 10px; height: 4px;
-background: var(–border); border-radius: 2px; overflow: visible; }
-.sun-daylight { position: absolute; top: 0; bottom: 0;
-background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d, #fbbf24, #f59e0b); border-radius: 2px; }
-.sun-dot { position: absolute; top: -6px; width: 16px; height: 16px; border-radius: 50%;
-background: #fef3c7; box-shadow: 0 0 12px rgba(251,191,36,0.9); transform: translateX(-50%); }
-.sun-times { display: flex; justify-content: space-between; font-size: 10px;
-color: var(–muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
-.sun-times .mid { color: var(–dim); }
+  /* Sun bar */
+  .sun-bar { position: relative; height: 24px; margin-top: 4px; }
+  .sun-track { position: absolute; left: 0; right: 0; top: 10px; height: 4px;
+    background: var(--border); border-radius: 2px; overflow: visible; }
+  .sun-daylight { position: absolute; top: 0; bottom: 0;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d, #fbbf24, #f59e0b); border-radius: 2px; }
+  .sun-dot { position: absolute; top: -6px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fef3c7; box-shadow: 0 0 12px rgba(251,191,36,0.9); transform: translateX(-50%); }
+  .sun-times { display: flex; justify-content: space-between; font-size: 10px;
+    color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .sun-times .mid { color: var(--dim); }
 
-/* Verdict */
-.verdict-row { display: flex; align-items: center; gap: 14px; }
-.verdict-icon { width: 52px; height: 52px; border-radius: 50%;
-display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.verdict-text { flex: 1; }
-.verdict-main { font-size: 20px; font-weight: 500; line-height: 1.1; }
-.verdict-sub { font-size: 12px; color: var(–muted); margin-top: 4px; }
+  /* Verdict */
+  .verdict-row { display: flex; align-items: center; gap: 14px; }
+  .verdict-icon { width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .verdict-text { flex: 1; }
+  .verdict-main { font-size: 20px; font-weight: 500; line-height: 1.1; }
+  .verdict-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-/* Compass */
-.compass { width: 40px; height: 40px; position: relative; flex: 0 0 auto; }
-.compass-ring { position: absolute; inset: 0; border-radius: 50%;
-border: 1.5px solid var(–border); }
-.compass-n { position: absolute; top: 1px; left: 50%; transform: translateX(-50%);
-font-size: 7px; color: var(–muted); font-weight: 600; }
-.compass-arrow { position: absolute; inset: 0; display: flex;
-align-items: center; justify-content: center; transition: transform 0.5s; }
+  /* Compass */
+  .compass { width: 40px; height: 40px; position: relative; flex: 0 0 auto; }
+  .compass-ring { position: absolute; inset: 0; border-radius: 50%;
+    border: 1.5px solid var(--border); }
+  .compass-n { position: absolute; top: 1px; left: 50%; transform: translateX(-50%);
+    font-size: 7px; color: var(--muted); font-weight: 600; }
+  .compass-arrow { position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; transition: transform 0.5s; }
 
-/* Barometer chart */
-.baro-chart { width: 100%; height: 48px; }
+  /* Barometer chart */
+  .baro-chart { width: 100%; height: 48px; }
 
-/* Stargazing */
-.stars-row { display: flex; align-items: center; gap: 16px; }
-.moon-viz { flex: 0 0 auto; }
-.stars-meta { font-size: 11px; color: var(–muted); margin-top: 2px; }
+  /* Stargazing */
+  .stars-row { display: flex; align-items: center; gap: 16px; }
+  .moon-viz { flex: 0 0 auto; }
+  .stars-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-/* Pollen */
-.pollen-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.pollen { background: rgba(2,6,23,0.6); border: 1px solid var(–border); border-radius: 12px; padding: 10px; }
-.pollen .p-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(–muted); }
-.pollen .p-val { font-size: 13px; font-weight: 500; margin-top: 4px; }
-.pollen .bars { display: flex; gap: 2px; margin-top: 8px; }
-.pollen .bars span { flex: 1; height: 4px; border-radius: 2px; background: var(–border); }
+  /* Pollen */
+  .pollen-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .pollen { background: rgba(2,6,23,0.6); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+  .pollen .p-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .pollen .p-val { font-size: 13px; font-weight: 500; margin-top: 4px; }
+  .pollen .bars { display: flex; gap: 2px; margin-top: 8px; }
+  .pollen .bars span { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
 
-/* Taxis */
-.taxi-list { display: flex; flex-direction: column; gap: 8px; }
-.taxi-item { display: flex; align-items: center; gap: 12px;
-padding: 10px 12px; background: rgba(2,6,23,0.6);
-border: 1px solid var(–border); border-radius: 12px;
-text-decoration: none; color: var(–text); }
-.taxi-item:active { background: rgba(56,189,248,0.1); }
-.taxi-icon { width: 34px; height: 34px; border-radius: 50%;
-background: rgba(56,189,248,0.15); color: var(–accent);
-display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.taxi-info { flex: 1; min-width: 0; }
-.taxi-name { font-size: 14px; font-weight: 500; }
-.taxi-num { font-size: 12px; color: var(–muted);
-font-variant-numeric: tabular-nums; margin-top: 1px; }
+  /* Taxis */
+  .taxi-list { display: flex; flex-direction: column; gap: 8px; }
+  .taxi-item { display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; background: rgba(2,6,23,0.6);
+    border: 1px solid var(--border); border-radius: 12px;
+    text-decoration: none; color: var(--text); }
+  .taxi-item:active { background: rgba(56,189,248,0.1); }
+  .taxi-icon { width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(56,189,248,0.15); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .taxi-info { flex: 1; min-width: 0; }
+  .taxi-name { font-size: 14px; font-weight: 500; }
+  .taxi-num { font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums; margin-top: 1px; }
 
-.footnote { font-size: 10px; color: var(–muted); text-align: center;
-margin-top: 14px; line-height: 1.5; }
-.error { padding: 24px; text-align: center; color: #fca5a5; }
-.error button { margin-top: 12px; background: var(–card); color: var(–text);
-border: 1px solid var(–border); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-.loading { padding: 60px 0; text-align: center; color: var(–muted); font-size: 14px; }
-.loading svg { animation: spin 1s linear infinite; vertical-align: -4px; margin-right: 8px; }
+  .footnote { font-size: 10px; color: var(--muted); text-align: center;
+    margin-top: 14px; line-height: 1.5; }
+  .error { padding: 24px; text-align: center; color: #fca5a5; }
+  .error button { margin-top: 12px; background: var(--card); color: var(--text);
+    border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+  .loading { padding: 60px 0; text-align: center; color: var(--muted); font-size: 14px; }
+  .loading svg { animation: spin 1s linear infinite; vertical-align: -4px; margin-right: 8px; }
 </style>
-
 </head>
 <body>
 <div id="app" class="wrap"></div>
 
 <script>
+// Global error handler — if anything blows up, show it instead of stuck loading
+window.addEventListener("error", (e) => {
+  const el = document.getElementById("app");
+  if (el && (!window.state || !window.state.data)) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:#fca5a5;font-family:system-ui">
+      <p><strong>App error</strong></p>
+      <p style="font-size:12px;color:#94a3b8;margin-top:8px">${e.message || "Unknown"}</p>
+      <button onclick="location.reload()" style="margin-top:16px;background:#0f172a;color:#f1f5f9;border:1px solid #1e293b;padding:8px 16px;border-radius:8px;cursor:pointer">Reload</button>
+    </div>`;
+  }
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const el = document.getElementById("app");
+  if (el && (!window.state || !window.state.data)) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:#fca5a5;font-family:system-ui">
+      <p><strong>Couldn't load data</strong></p>
+      <p style="font-size:12px;color:#94a3b8;margin-top:8px">${e.reason?.message || e.reason || "Network error"}</p>
+      <button onclick="location.reload()" style="margin-top:16px;background:#0f172a;color:#f1f5f9;border:1px solid #1e293b;padding:8px 16px;border-radius:8px;cursor:pointer">Reload</button>
+    </div>`;
+  }
+});
+
 // --- Config ---------------------------------------------------------------
 const LOCATIONS = [
   {
@@ -738,6 +758,22 @@ document.addEventListener("click", () => {
 });
 
 function render() {
+  try {
+    _renderImpl();
+  } catch (e) {
+    console.error("Render error:", e);
+    const app = document.getElementById("app");
+    if (app) {
+      app.innerHTML = `<div style="padding:24px;text-align:center;color:#fca5a5;font-family:system-ui">
+        <p><strong>Display error</strong></p>
+        <p style="font-size:12px;color:#94a3b8;margin-top:8px">${e.message || e}</p>
+        <button onclick="location.reload()" style="margin-top:16px;background:#0f172a;color:#f1f5f9;border:1px solid #1e293b;padding:8px 16px;border-radius:8px;cursor:pointer">Reload</button>
+      </div>`;
+    }
+  }
+}
+
+function _renderImpl() {
   const app = document.getElementById("app");
   if (state.loading && !state.data) {
     app.innerHTML = `<div class="loading">${ICONS.refresh}Loading ${currentLoc().name} data…</div>`;
@@ -1051,24 +1087,34 @@ ${rc ? `
   </div>
 </div>
 
-<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.5 · ${new Date().toLocaleDateString("en-GB")}</p>`;
+<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.6 · ${new Date().toLocaleDateString("en-GB")}</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
 window.__reload = async function() {
   state.refreshing = true; render();
+  // Hard outer timeout so the spinner can't get stuck indefinitely
+  const hardTimeout = setTimeout(() => {
+    if (!state.data) {
+      state.loading = false;
+      state.error = "Loading timed out. Tap retry.";
+      render();
+    }
+  }, 20000);
   try {
     state.data = await loadAll(currentLoc());
     state.error = null;
   } catch (e) {
     console.error(e);
-    state.error = "Couldn't load data. Check your connection.";
+    state.error = "Couldn't load data: " + (e.message || "unknown");
   }
+  clearTimeout(hardTimeout);
   state.loading = false;
   state.refreshing = false;
   state.now = new Date();
   render();
 };
+window.state = state;
 
 setInterval(() => { if (state.data) { state.now = new Date(); render(); } }, 30000);
 setInterval(() => window.__reload(), REFRESH_MS);
@@ -1076,6 +1122,5 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) wind
 
 window.__reload();
 </script>
-
 </body>
 </html>
