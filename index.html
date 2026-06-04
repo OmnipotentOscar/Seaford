@@ -786,6 +786,8 @@ function _renderImpl() {
 
   const { current, daily, marine, tideSeries, pollen, pressureHistory } = state.data;
   const now = state.now;
+  const loc = currentLoc();
+  document.title = loc.name;
 
   // Tide
   const extremes = findExtremes(tideSeries);
@@ -872,9 +874,6 @@ function _renderImpl() {
     precip: current.precipitation
   });
   const starsCol = scoreColor(stars);
-
-  const loc = currentLoc();
-  document.title = loc.name;
 
   app.innerHTML = `
 <header>
@@ -1087,7 +1086,7 @@ ${rc ? `
   </div>
 </div>
 
-<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.6 · ${new Date().toLocaleDateString("en-GB")}</p>`;
+<p class="footnote">Data: Open-Meteo. Tides modelled at ~8 km resolution — not for navigation.<br>v3.7 · ${new Date().toLocaleDateString("en-GB")}</p>`;
 }
 
 // --- Wire up --------------------------------------------------------------
